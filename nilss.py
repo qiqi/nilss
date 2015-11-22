@@ -4,6 +4,7 @@ from scipy import sparse
 from scipy.sparse import linalg as splinalg
 
 _DEBUG_ = True
+_DEBUG_ = False
 
 def LSS_KKT(R, D):
     R, D = array(R), array(D)
@@ -14,6 +15,12 @@ def LSS_KKT(R, D):
     bigR = sparse.bsr_matrix((R, r_[:N], r_[:N+1]), \
                           shape=(N*m, (N+1)*m))
 
+    I = array([eye(m)] * N)
+    bigI = sparse.bsr_matrix((I, r_[1:N+1], r_[:N+1]), \
+                          shape=(N*m, (N+1)*m))
+
+    bigL = bigI - bigR
+
     assert D.shape == (N+1, m, m)
     bigD = sparse.bsr_matrix((D, r_[:N+1], r_[:N+2]), \
                           shape=((N+1)*m, (N+1)*m))
@@ -22,8 +29,8 @@ def LSS_KKT(R, D):
     bigO = sparse.bsr_matrix((O, r_[:N], r_[:N+1]), \
                           shape=(N*m, N*m))
 
-    return sparse.vstack([sparse.hstack([bigD, bigR.T]),
-                          sparse.hstack([bigR, bigO])])
+    return sparse.vstack([sparse.hstack([bigD, bigL.T]),
+                          sparse.hstack([bigL, bigO])])
 
 def solveLss(R, D, b, c):
     N, m = len(R), len(R[0])
@@ -84,29 +91,34 @@ class NILSS(object):
         self.computed_grad.append(self._compute_grad())
 
     def grad(self):
-        return self.computed_grad[-1]
+        if not _DEBUG_:
+            return self._compute_grad()
+        else:
+            return self.computed_grad[-1]
 
     def _compute_grad(self):
-        identities = [eye(self.nHomo)] * len(self.R)
-        identities += [zeros([self.nHomo, self.nHomo])]
+        window = sin(linspace(0, pi, len(self.R) + 1))**2
+        identities = window[:,newaxis,newaxis] * eye(self.nHomo)
         zero = [zeros(self.nHomo)] * (len(self.R) + 1)
         self.a = solveLss(self.R, identities, self.b, zero)
 
         grad = 0
+        win = sin(linspace(0, pi, len(self.a) - 1))**2
+        win /= win.mean()
         for i in range(len(self.a) - 1):
             for j in range(self.nHomo):
-                grad += self.a[i][j] * self.stored_grad[i][j]
-            grad += self.stored_grad[i][-1]
+                grad += win[i] * self.a[i][j] * self.stored_grad[i][j]
+            grad += win[i] * self.stored_grad[i][-1]
 
-            # if _DEBUG_:
-            #     y_last = self.y_last[i][-1].copy()
-            #     y_next = self.y_next[i][-1].copy()
-            #     for j in range(self.nHomo):
-            #         y_last += self.y_last[i][j] * self.a[i][j]
-            #         y_next += self.y_next[i][j] * self.a[i+1][j]
-            #     discontinuity = abs(y_last - y_next).max()
-            #     if discontinuity > 1E-9:
-            #         print('Discontinuity in y = ', discontinuity)
+            if _DEBUG_:
+                y_last = self.y_last[i][-1].copy()
+                y_next = self.y_next[i][-1].copy()
+                for j in range(self.nHomo):
+                    y_last += self.y_last[i][j] * self.a[i][j]
+                    y_next += self.y_next[i][j] * self.a[i+1][j]
+                discontinuity = abs(y_last - y_next).max()
+                if discontinuity > 1E-9:
+                    print('Discontinuity in y = ', discontinuity)
 
         return grad
 
