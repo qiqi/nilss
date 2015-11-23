@@ -1,3 +1,4 @@
+from __future__ import division
 from numpy import *
 from lorenz63 import dot, step, adjoint, gradContribution
 from nilss import NILSS
@@ -39,11 +40,11 @@ for iChunk in reversed(range(nChunks)):
     lss.checkpoint(y, grad, yHist)
     print(lss.grad())
 
-y = array(lss.y_hist)
-a = array(lss.a)[:-1]
-y = (y[:,:,:-1,:] * a[:,newaxis,:,newaxis]).sum(2) + y[:,:,-1,:]
-y = y.reshape((-1,3))[::-1,:]
-
-x = array(history).reshape([-1,3])
-
-g = x[:,0] * y[:,1] * 0.001
+# y = array(lss.y_hist)
+# a = array(lss.a)[:-1]
+# y = (y[:,:,:-1,:] * a[:,newaxis,:,newaxis]).sum(2) + y[:,:,-1,:]
+# y = y.reshape((-1,3))[::-1,:]
+# 
+# x = array(history).reshape([-1,3])
+# 
+# g = x[:,0] * y[:,1] * 0.001

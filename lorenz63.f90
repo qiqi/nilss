@@ -1,6 +1,6 @@
 PROGRAM Lorenz63_NILSS
 
-    USE NiLSS, ONLY : NiLSS_init, NiLSS_Checkpoint, NiLSS_grad
+    ! USE NiLSS, ONLY : NiLSS_init, NiLSS_checkpoint, NiLSS_gradient
 
     IMPLICIT NONE
 
@@ -10,7 +10,7 @@ PROGRAM Lorenz63_NILSS
 
     INTEGER :: iStep, iChunk, iAdjoint
     REAL(8) :: x(3), y(nHomoAdjoint+1, 3), dotProductWeights(3)
-    REAL(8) :: grad(nHomoAdjoint+1, 1)
+    REAL(8) :: grad(nHomoAdjoint+1, 1), lss_grad(1)
     REAL(8), ALLOCATABLE :: history(:,:,:)
 
     INTEGER :: nTotalSteps
@@ -60,11 +60,12 @@ PROGRAM Lorenz63_NILSS
             y(nHomoAdjoint + 1, 3) = y(nHomoAdjoint + 1, 3) + &
                 windowFunction / nTotalSteps
             ! checkpoint the adjoint solution
-            CALL NiLSS_Checkpoint(y, grad)
+            CALL NiLSS_checkpoint(y, grad)
         END DO
     END DO
 
-    Write (*,*) 'NI-LSS Gradient = ', NiLSS_grad(1)
+    CALL NiLSS_gradient(lss_grad)
+    Write (*,*) 'NI-LSS Gradient = ', lss_grad(1)
 
 CONTAINS
 

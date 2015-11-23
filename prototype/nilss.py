@@ -1,3 +1,4 @@
+from __future__ import division
 from copy import copy as pythonCopy
 from numpy import *
 from scipy import sparse
@@ -35,7 +36,7 @@ def LSS_KKT(R, D):
 def solveLss(R, D, b, c):
     N, m = len(R), len(R[0])
 
-    kkt = LSS_KKT(R, D)
+    kkt = LSS_KKT(R, D).tocsr()
 
     assert(len(R) == len(b))
     assert(len(D) == len(c))

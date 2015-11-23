@@ -1,3 +1,4 @@
+from __future__ import division
 from numpy import *
 
 dt = 0.001
