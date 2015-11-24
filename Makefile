@@ -22,4 +22,4 @@ nilss_fortran.o:	nilss_fortran.cpp nilss.h
 	$(CC) -c -fPIC nilss_fortran.cpp
 
 nilss.o:	nilss.cpp nilss.h
-	$(CC) -c -fPIC nilss.cpp
+	$(CC) -I/usr/include/eigen3 -c -fPIC nilss.cpp
