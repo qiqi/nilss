@@ -12,7 +12,7 @@ void nilss_init_(int* nHomoAdjoint, int* nStateVaraibles,
             *nDesignVariables, dotProductWeights);
 }
 
-void nilss_checkpoint_(double ** y, double ** grad)
+void nilss_checkpoint_(double * y, double * grad)
 {
     assert(p_nilss != nullptr);
     p_nilss->checkpoint(y, grad);

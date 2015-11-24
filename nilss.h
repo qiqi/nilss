@@ -16,13 +16,14 @@ namespace nilss {
 
             double dotProd_(const double * y1, const double * y2) const;
             void axpy_(double * y, const double * x, double a) const;
+            void scale_(double * y, double a) const;
             double window_(double x) const;
 
         public:
             NILSS(int nHomoAdjoint, int nStateVariables,
                   int nDesignVariables, const double * dotProductWeights);
 
-            void checkpoint(double* const* y, const double* const* grad);
+            void checkpoint(double * y, const double * grad);
 
             void gradient(double * grad) const;
     };

@@ -9,8 +9,8 @@ PROGRAM Lorenz63_NILSS
     INTEGER, PARAMETER :: nHomoAdjoint = 2
 
     INTEGER :: iStep, iChunk, iAdjoint
-    REAL(8) :: x(3), y(nHomoAdjoint+1, 3), dotProductWeights(3)
-    REAL(8) :: grad(nHomoAdjoint+1, 1), lss_grad(1)
+    REAL(8) :: x(3), y(3, nHomoAdjoint+1), dotProductWeights(3)
+    REAL(8) :: grad(1, nHomoAdjoint+1), lss_grad(1)
     REAL(8), ALLOCATABLE :: history(:,:,:)
 
     INTEGER :: nTotalSteps
@@ -28,10 +28,10 @@ PROGRAM Lorenz63_NILSS
     END DO
 
     WRITE (*,*) 'PRIMAL CALCULATION'
-    Allocate(history(nChunks, nStepsPerChunk, 3))
+    Allocate(history(3, nStepsPerChunk, nChunks))
     DO iChunk = 1, nChunks
         DO iStep = 1, nStepsPerChunk
-            history(iChunk, iStep, :) = x(:)
+            history(:, iStep, iChunk) = x(:)
             CALL Step(x, s)
         END DO
     END DO
@@ -48,16 +48,16 @@ PROGRAM Lorenz63_NILSS
 
     DO iChunk = nChunks, 1, -1
         DO iStep = nStepsPerChunk, 1, -1
-            x(:) = history(iChunk, iStep, :)
+            x(:) = history(:, iStep, iChunk)
             DO iAdjoint = 1, nHomoAdjoint + 1
-                CALL gradContribution(x, y(iAdjoint, :), s, grad(iAdjoint,:))
-                CALL Adjoint(x, y(iAdjoint, :), s)
+                CALL gradContribution(x, y(:,iAdjoint), s, grad(:,iAdjoint))
+                CALL Adjoint(x, y(:,iAdjoint), s)
             END DO
             ! windowing
             nTotalSteps = nChunks * nStepsPerChunk
             timeFraction = real(iStep + iChunk * nStepsPerChunk) / nTotalSteps
             windowFunction = sin(timeFraction) * sin(timeFraction) * 2
-            y(nHomoAdjoint + 1, 3) = y(nHomoAdjoint + 1, 3) + &
+            y(3, nHomoAdjoint + 1) = y(3, nHomoAdjoint + 1) + &
                 windowFunction / nTotalSteps
             ! checkpoint the adjoint solution
             CALL NiLSS_checkpoint(y, grad)

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include <Eigen/Dense>
 #include "nilss.h"
 #include "nilss_solver.h"
@@ -30,33 +31,47 @@ void NILSS::axpy_(double * y, const double * x, double a) const
     }
 }
 
-void NILSS::checkpoint(double* const* y, const double* const* grad)
+void NILSS::scale_(double * y, double a) const
+{
+    for (int i = 0; i < size_; ++ i) {
+        y[i] *= a;
+    }
+}
+
+void NILSS::checkpoint(double * y, const double * grad)
 {
     // Gram Schmidt orthonormalization
     R_.emplace_back(nHomo_, nHomo_);
     Eigen::MatrixXd & R = R_.back();
     for (int i = 0; i < nHomo_; ++ i) {
+        std::cout << i << ", " << nHomo_ << std::endl;
         R.col(i).setZero();
+        double * yi = y + i * size_;
         for (int j = 0; j < i; ++j) {
-            R(j,i) = dotProd_(y[i], y[j]);
-            axpy_(y[i], y[j], -R(j,i));
+            double * yj = y + j * size_;
+            R(j,i) = dotProd_(yi, yj);
+            std::cout << "    " << j << ", " << R(j,i) << std::endl;
+            axpy_(yi, yj, -R(j,i));
         }
-        R(i,i) = sqrt(dotProd_(y[i], y[i]));
+        R(i,i) = sqrt(dotProd_(yi, yi));
+        scale_(yi, 1.0/R(i,i));
     }
     // Orthogonalization
     b_.emplace_back(nHomo_);
     Eigen::VectorXd & b = b_.back();
     b.setZero();
+    double * yInHomo = y + nHomo_ * size_;
     for (int j = 0; j < nHomo_; ++j) {
-        b(j) = dotProd_(y[j], y[nHomo_]);
-        axpy_(y[nHomo_], y[j], -b(j));
+        double * yj = y + j * size_;
+        b(j) = dotProd_(yj, yInHomo);
+        axpy_(yInHomo, yj, -b(j));
     }
     // Store gradient
     stored_grad_.emplace_back(nHomo_ + 1, nGrad_);  // homo and inhomo
     Eigen::MatrixXd & stored_grad = stored_grad_.back();
     for (int i = 0; i <= nHomo_; ++i) {
         for (int j = 0; j <= nGrad_; ++j) {
-            stored_grad(i,j) = grad[i][j];
+            stored_grad(i,j) = grad[i * nGrad_ + j];
         }
     }
 }
@@ -98,7 +113,10 @@ void NILSS::gradient(double * gradient) const
     grad.setZero();
     for (size_t i = 0; i < a.size(); ++ i) {
         auto gradi = stored_grad_[i];
-        grad += a[i] * gradi.topRows(nHomo_) + gradi.row(nHomo_);
+        for (int j = 0; j <= nHomo_; ++ j) {
+            double aij = (j < nHomo_) ? a[i](j) : 1.0;
+            grad += aij * gradi.row(j);
+        }
     }
 
     for (int i = 0; i < nGrad_; ++i) {
