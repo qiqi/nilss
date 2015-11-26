@@ -10,7 +10,7 @@ NILSS::NILSS(int nHomoAdjoint, int nStateVariables,
              int nDesignVariables, const double * dotProductWeights)
     : nHomo_(nHomoAdjoint), size_(nStateVariables), nGrad_(nDesignVariables)
 {
-    for (int i = 0; i < nDesignVariables; ++i) {
+    for (int i = 0; i < size_; ++i) {
         dotWeights_.push_back(dotProductWeights[i]);
     }
 }
@@ -44,8 +44,8 @@ void NILSS::checkpoint(double * y, const double * grad)
     R_.emplace_back(nHomo_, nHomo_);
     Eigen::MatrixXd & R = R_.back();
     for (int i = 0; i < nHomo_; ++ i) {
-        std::cout << i << ", " << nHomo_ << std::endl;
-        R.col(i).setZero();
+        std::cout << i << ": " << R.cols() << ", " << R.rows() << std::endl;
+        // R.col(i).setZero();
         double * yi = y + i * size_;
         for (int j = 0; j < i; ++j) {
             double * yj = y + j * size_;
@@ -70,7 +70,7 @@ void NILSS::checkpoint(double * y, const double * grad)
     stored_grad_.emplace_back(nHomo_ + 1, nGrad_);  // homo and inhomo
     Eigen::MatrixXd & stored_grad = stored_grad_.back();
     for (int i = 0; i <= nHomo_; ++i) {
-        for (int j = 0; j <= nGrad_; ++j) {
+        for (int j = 0; j < nGrad_; ++j) {
             stored_grad(i,j) = grad[i * nGrad_ + j];
         }
     }

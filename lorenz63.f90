@@ -1,7 +1,5 @@
 PROGRAM Lorenz63_NILSS
 
-    ! USE NiLSS, ONLY : NiLSS_init, NiLSS_checkpoint, NiLSS_gradient
-
     IMPLICIT NONE
 
     REAL(8), PARAMETER :: s(1) = (/30.0/)
