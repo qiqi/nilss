@@ -57,9 +57,9 @@ PROGRAM Lorenz63_NILSS
             windowFunction = sin(timeFraction) * sin(timeFraction) * 2
             y(3, nHomoAdjoint + 1) = y(3, nHomoAdjoint + 1) + &
                 windowFunction / nTotalSteps
-            ! checkpoint the adjoint solution
-            CALL NiLSS_checkpoint(y, grad)
         END DO
+        ! checkpoint the adjoint solution
+        CALL NiLSS_checkpoint(y, grad)
     END DO
 
     CALL NiLSS_gradient(lss_grad)

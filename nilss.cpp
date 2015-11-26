@@ -44,13 +44,11 @@ void NILSS::checkpoint(double * y, const double * grad)
     R_.emplace_back(nHomo_, nHomo_);
     Eigen::MatrixXd & R = R_.back();
     for (int i = 0; i < nHomo_; ++ i) {
-        std::cout << i << ": " << R.cols() << ", " << R.rows() << std::endl;
-        // R.col(i).setZero();
+        R.col(i).setZero();
         double * yi = y + i * size_;
         for (int j = 0; j < i; ++j) {
             double * yj = y + j * size_;
             R(j,i) = dotProd_(yi, yj);
-            std::cout << "    " << j << ", " << R(j,i) << std::endl;
             axpy_(yi, yj, -R(j,i));
         }
         R(i,i) = sqrt(dotProd_(yi, yi));
