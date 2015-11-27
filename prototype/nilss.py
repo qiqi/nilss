@@ -43,8 +43,6 @@ def solveLss(R, D, b, c):
 
     rhs = hstack([hstack(c), hstack(b)])
 
-    set_printoptions(threshold=nan)
-    print(rhs)
     sol = splinalg.spsolve(kkt, rhs)
     return sol[:(N+1)*m].reshape([N+1,m])
 
@@ -100,6 +98,8 @@ class NILSS(object):
             return self.computed_grad[-1]
 
     def _compute_grad(self):
+        if len(self.R) <= 1:
+            return
         window = sin(linspace(0, pi, len(self.R) + 1))**2
         identities = window[:,newaxis,newaxis] * eye(self.nHomo)
         zero = [zeros(self.nHomo)] * (len(self.R) + 1)
@@ -108,9 +108,7 @@ class NILSS(object):
         grad = 0
         win = sin(linspace(0, pi, len(self.a) - 1))**2
         win /= win.mean()
-        print()
         for i in range(len(self.a) - 1):
-            print(i, self.a[i])
             for j in range(self.nHomo):
                 grad += win[i] * self.a[i][j] * self.stored_grad[i][j]
             grad += win[i] * self.stored_grad[i][-1]

@@ -112,24 +112,24 @@ END SUBROUTINE
 
 SUBROUTINE testAdjoint
     IMPLICIT NONE
-    REAL(8) :: x(1000,3), xp(3), xm(3), y(3), s(1), sp(1), sm(1), eps, grad1, grad2(1)
+    REAL(8) :: x(3,100), xp(3), xm(3), y(3), s(1), sp(1), sm(1), eps, grad1, grad2(1)
     INTEGER :: iStep
 
-    CALL RANDOM_NUMBER(x(1,:))
+    CALL RANDOM_NUMBER(x(:,1))
     CALL RANDOM_NUMBER(y)
     CALL RANDOM_NUMBER(s)
-    x(1,:) = x(1,:) * 50
+    x(:,1) = x(:,1) * 50
     s(:) = s(:) * 100
 
     eps = 1E-9
     sp(:) = s(:) + eps / 2
     sm(:) = s(:) - eps / 2
 
-    xp(:) = x(1,:)
-    xm(:) = x(1,:)
+    xp(:) = x(:,1)
+    xm(:) = x(:,1)
     DO iStep = 2,100
-        x(iStep,:) = x(iStep-1,:)
-        CALL Step(x(iStep,:), s)
+        x(:,iStep) = x(:,iStep-1)
+        CALL Step(x(:,iStep), s)
         CALL Step(xp, sp)
         CALL Step(xm, sm)
     END DO
@@ -137,8 +137,8 @@ SUBROUTINE testAdjoint
 
     grad2(1) = 0
     DO iStep = 99,1,-1
-        CALL gradContribution(x(iStep,:), y, s, grad2)
-        CALL Adjoint(x(iStep,:), y, s)
+        CALL gradContribution(x(:,iStep), y, s, grad2)
+        CALL Adjoint(x(:,iStep), y, s)
     END DO
 
     write (*,*) "FD=", grad1, "ADJ=", grad2, "ERR=", grad1 - grad2

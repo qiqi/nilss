@@ -4,15 +4,13 @@ from lorenz63 import dot, step, adjoint, gradContribution
 from nilss import NILSS
 
 s = 28
-nChunks, nStepsPerChunk = 10, 100
+nChunks, nStepsPerChunk = 200, 500
 nTotalSteps = nChunks * nStepsPerChunk
 
 # initial transient
 x = ones(3)
 for iStep in range(1000):
     x = step(x, s)
-
-print(x)
 
 # primal
 history = []
@@ -21,8 +19,6 @@ for iChunk in range(nChunks):
     for iStep in range(nStepsPerChunk):
         history[iChunk].append(x)
         x = step(x, s)
-
-print(x)
 
 # adjoint
 nHomo = 2
