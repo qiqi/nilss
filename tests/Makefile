@@ -5,13 +5,13 @@ INC = -I/usr/include/eigen3 -I..
 default:	unittests testFortran
 
 clean:
-	rm -f test_*.c *.o unittest
+	rm -f _unittests*.c *.o unittests testFortran
 
-unittests:	test_nilss.c ../libnilss.so
-	$(CXX) $(INC) -Wl,-R -Wl,.. -o unittests test_nilss.c -L.. -lnilss
+unittests:	_unittests.c ../libnilss.so
+	$(CXX) $(INC) -Wl,-R -Wl,.. -o unittests _unittests.c -L.. -lnilss
 
-test_nilss.c:	test_nilss.h
-	$(CTG) -o test_nilss.c test_nilss.h
+_unittests.c:	test_nilss.h test_nilss_solver.h
+	$(CTG) -o $@ $^
 
 testFortran:	testFortran.f90 testFortran_c.o
 	gfortran -Wl,-R -Wl,. -o testFortran $^ -lstdc++

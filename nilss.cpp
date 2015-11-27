@@ -40,36 +40,43 @@ void NILSS::scale_(double * y, double a) const
 
 void NILSS::checkpoint(double * y, const double * grad)
 {
+    double * p_y[nHomo_ + 1];
+    const double * p_grad[nHomo_ + 1];
+    for (int i = 0; i <= nHomo_; ++ i) {
+        p_y[i] = y + i * size_;
+        p_grad[i] = grad + i * nGrad_;
+    }
+    checkpoint(p_y, p_grad);
+}
+
+void NILSS::checkpoint(double * const * y, const double * const * grad)
+{
     // Gram Schmidt orthonormalization
     R_.emplace_back(nHomo_, nHomo_);
     Eigen::MatrixXd & R = R_.back();
     for (int i = 0; i < nHomo_; ++ i) {
         R.col(i).setZero();
-        double * yi = y + i * size_;
         for (int j = 0; j < i; ++j) {
-            double * yj = y + j * size_;
-            R(j,i) = dotProd_(yi, yj);
-            axpy_(yi, yj, -R(j,i));
+            R(j,i) = dotProd_(y[i], y[j]);
+            axpy_(y[i], y[j], -R(j,i));
         }
-        R(i,i) = sqrt(dotProd_(yi, yi));
-        scale_(yi, 1.0/R(i,i));
+        R(i,i) = sqrt(dotProd_(y[i], y[i]));
+        scale_(y[i], 1.0/R(i,i));
     }
     // Orthogonalization
     b_.emplace_back(nHomo_);
     Eigen::VectorXd & b = b_.back();
     b.setZero();
-    double * yInHomo = y + nHomo_ * size_;
     for (int j = 0; j < nHomo_; ++j) {
-        double * yj = y + j * size_;
-        b(j) = dotProd_(yj, yInHomo);
-        axpy_(yInHomo, yj, -b(j));
+        b(j) = dotProd_(y[j], y[nHomo_]);
+        axpy_(y[nHomo_], y[j], -b(j));
     }
     // Store gradient
     stored_grad_.emplace_back(nHomo_ + 1, nGrad_);  // homo and inhomo
     Eigen::MatrixXd & stored_grad = stored_grad_.back();
     for (int i = 0; i <= nHomo_; ++i) {
         for (int j = 0; j < nGrad_; ++j) {
-            stored_grad(i,j) = grad[i * nGrad_ + j];
+            stored_grad(i,j) = grad[i][j];
         }
     }
 }
@@ -94,23 +101,25 @@ void NILSS::gradient(double * gradient) const
         identities.back().setIdentity();
         identities.back() *= window;
         zeros.emplace_back(nHomo_);
+        zeros.back().setZero();
     }
 
     std::vector<Eigen::VectorXd> a;
     nilss_solve(R_, identities, b_, zeros, a);
-    assert(a.size() == stored_grad_.size());
+    assert(a.size() == stored_grad_.size() + 1);
+    assert(a.size() == R_.size() + 1);
 
-    Eigen::VectorXd window(a.size());
-    for (size_t i = 0; i < a.size(); ++ i) {
-        window(i) = window_((double)i / (R_.size() - 2));
+    Eigen::VectorXd window(R_.size());
+    for (size_t i = 0; i < R_.size(); ++ i) {
+        window(i) = window_((double)i / (R_.size() - 1));
     }
-    window /= window.sum();
+    window /= window.mean();
 
     // combine the gradients
     Eigen::VectorXd grad(nGrad_);
     grad.setZero();
-    for (size_t i = 0; i < a.size(); ++ i) {
-        auto gradi = stored_grad_[i];
+    for (size_t i = 0; i < R_.size(); ++ i) {
+        auto gradi = window(i) * stored_grad_[i];
         for (int j = 0; j <= nHomo_; ++ j) {
             double aij = (j < nHomo_) ? a[i](j) : 1.0;
             grad += aij * gradi.row(j);

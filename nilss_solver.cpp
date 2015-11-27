@@ -2,9 +2,12 @@
 #include <cassert>
 #include <iostream>
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include "nilss_solver.h"
 
 using namespace Eigen;
+
+namespace nilss {
 
 std::unique_ptr<MatrixXd> assemble_kkt(
         const std::vector<MatrixXd>& R, const std::vector<MatrixXd>& D)
@@ -14,6 +17,7 @@ std::unique_ptr<MatrixXd> assemble_kkt(
 
     int kktSize = (2 * n + 1) * m;
     MatrixXd * pMat = new MatrixXd(kktSize, kktSize);
+    pMat->setZero();
 
     for (int i = 0; i <= n; ++ i) {
         pMat->block(i * m, i * m, m, m) = D[i];
@@ -21,11 +25,11 @@ std::unique_ptr<MatrixXd> assemble_kkt(
 
     int halfSize = (n + 1) * m;
     for (int i = 0; i < n; ++ i) {
-        pMat->block(halfSize + i * m, i * m, m, m) = MatrixXd::Identity(m, m);
-        pMat->block(halfSize + i * m, (i + 1) * m, m, m) = -R[i];
+        pMat->block(halfSize + i * m, (i + 1) * m, m, m) = MatrixXd::Identity(m, m);
+        pMat->block(halfSize + i * m, i * m, m, m) = -R[i];
 
-        pMat->block(i * m, halfSize + i * m, m, m) = MatrixXd::Identity(m, m);
-        pMat->block((i + 1) * m, halfSize + i * m, m, m) = -R[i].transpose();
+        pMat->block((i + 1) * m, halfSize + i * m, m, m) = MatrixXd::Identity(m, m);
+        pMat->block(i * m, halfSize + i * m, m, m) = -R[i].transpose();
     }
 
     return std::unique_ptr<MatrixXd>(pMat);
@@ -48,7 +52,7 @@ std::unique_ptr<VectorXd> assemble_rhs(
     for (int i = 0; i < n; ++ i) {
         pVec->segment(halfSize + i * m, m) = b[i];
     }
-    
+
     return std::unique_ptr<VectorXd>(pVec);
 }
 
@@ -65,13 +69,19 @@ void nilss_solve(const std::vector<MatrixXd>& R,
 
     std::unique_ptr<MatrixXd> kkt = assemble_kkt(R, D);
     std::unique_ptr<VectorXd> rhs = assemble_rhs(b, c);
-    std::cout << "ASSEMBLY COMPLETE" << kkt->cols() << "," << kkt->rows();
-    std::cout << ": " << rhs->size() << std::endl;
-    VectorXd sol = kkt->fullPivLu().solve(*rhs);
-    std::cout << "SOLVE COMPLETE\n";
 
-    assert(sol.size() % n == 0);
-    int m = sol.size() / n;
+    typedef SparseMatrix<double> SpMat;
+    SpMat A(kkt->sparseView());
+
+    SparseLU<SparseMatrix<double>> solver;
+    solver.analyzePattern(A); 
+    solver.factorize(A); 
+    VectorXd sol = solver.solve(*rhs); 
+
+    //VectorXd sol = kkt->partialPivLu().solve(*rhs);
+
+    assert(sol.size() % (2 * n + 1) == 0);
+    int m = sol.size() / (2 * n + 1);
 
     a.empty();
     a.reserve(n + 1);
@@ -80,3 +90,4 @@ void nilss_solve(const std::vector<MatrixXd>& R,
     }
 }
 
+}

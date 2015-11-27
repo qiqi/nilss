@@ -4,13 +4,15 @@ from lorenz63 import dot, step, adjoint, gradContribution
 from nilss import NILSS
 
 s = 28
-nChunks, nStepsPerChunk = 100, 1000
+nChunks, nStepsPerChunk = 10, 100
 nTotalSteps = nChunks * nStepsPerChunk
 
 # initial transient
-x = random.rand(3)
+x = ones(3)
 for iStep in range(1000):
     x = step(x, s)
+
+print(x)
 
 # primal
 history = []
@@ -20,11 +22,16 @@ for iChunk in range(nChunks):
         history[iChunk].append(x)
         x = step(x, s)
 
+print(x)
+
 # adjoint
 nHomo = 2
 lss = NILSS(nHomo, x.size, dot)
 
-y = random.rand(nHomo + 1, x.size)
+y = zeros([nHomo + 1, x.size])
+y[0,0] = 1
+y[1,1] = 1
+
 for iChunk in reversed(range(nChunks)):
     grad = zeros(y.shape[0])
     yHist = []
@@ -38,7 +45,8 @@ for iChunk in reversed(range(nChunks)):
         y[-1][2] += windowFunction / nTotalSteps # inhomogeneous
         yHist.append(y.copy())
     lss.checkpoint(y, grad, yHist)
-    print(lss.grad())
+
+print(lss.grad())
 
 # y = array(lss.y_hist)
 # a = array(lss.a)[:-1]

@@ -3,10 +3,13 @@
 
 #include<Eigen/Dense>
 
-void nilss_solve(const std::vector<Eigen::MatrixXd>& R_,
-                 const std::vector<Eigen::MatrixXd>& identities,
-                 const std::vector<Eigen::VectorXd>& b_,
-                 const std::vector<Eigen::VectorXd>& zeros,
-                 std::vector<Eigen::VectorXd>& a);
+namespace nilss
+{
+    void nilss_solve(const std::vector<Eigen::MatrixXd>& R,
+                     const std::vector<Eigen::MatrixXd>& D,
+                     const std::vector<Eigen::VectorXd>& b,
+                     const std::vector<Eigen::VectorXd>& c,
+                     std::vector<Eigen::VectorXd>& a);
+}
 
 #endif

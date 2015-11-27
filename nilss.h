@@ -23,6 +23,7 @@ namespace nilss {
             NILSS(int nHomoAdjoint, int nStateVariables,
                   int nDesignVariables, const double * dotProductWeights);
 
+            void checkpoint(double * const * y, const double * const * grad);
             void checkpoint(double * y, const double * grad);
 
             void gradient(double * grad) const;
