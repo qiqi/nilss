@@ -65,6 +65,8 @@ PROGRAM Lorenz63_NILSS
         CALL NiLSS_checkpoint(y, grad)
     END DO
 
+    WRITE (*,*) 'NILSS CALCULATION'
+
     CALL NiLSS_gradient(lss_grad)
     Write (*,*) 'NI-LSS Gradient = ', lss_grad(1)
 

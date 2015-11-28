@@ -7,8 +7,8 @@ default:	unittests testFortran
 clean:
 	rm -f _unittests*.c *.o unittests testFortran
 
-unittests:	_unittests.c ../libnilss.so
-	$(CXX) $(INC) -Wl,-R -Wl,.. -o $@ $^
+unittests:	_unittests.c ../lib/libnilss.so
+	$(CXX) $(INC) -Wl,-R -Wl,../lib -o $@ $^
 
 _unittests.c:	test_nilss.h test_nilss_solver.h
 	$(CTG) -o $@ $^
